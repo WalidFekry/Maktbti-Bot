@@ -38,8 +38,8 @@ export default async function qimg() {
         const conversionOptions = {
             url: `http://localhost:3000`,
             outputPath: folderOutputPath,
-            width: 1080,
-            height: 1920,
+            width: 1000,
+            height: 0,
             format: 'jpeg',
             retryLimit: 3,
             puppeteerConfig: {

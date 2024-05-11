@@ -87,7 +87,7 @@ export default async function CrateHtml(username) {
             </p>
         
             <p id="bot">
-                بوت أذكار : adhk2r_bot
+             تم النشر بواسطة بوت مكتبتي : maktbti_bot@
             </p>
         </div>
     

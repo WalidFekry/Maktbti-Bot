@@ -18,7 +18,7 @@ async function teleAltaqwaa() {
     // بداية npm
 
     const pkg = await fs.readJson(path.join(__dirname, './package.json'));
-    console.log(`teleAltaqwaa v${pkg?.version} جاهز! ${moment().locale('en-EN').format('LT')}`)
+    console.log(`maktbti_bot v${pkg?.version} ready! ${moment().locale('en-EN').format('LT')}`)
 
     // مجلد قاعدة البيانات
 

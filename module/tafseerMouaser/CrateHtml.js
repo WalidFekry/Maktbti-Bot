@@ -64,9 +64,9 @@ export default async function CrateHtml() {
 
     <div id="footer">
 
-        <!-- <p>
-            حسابنا على تيليجرام tqw24h@
-        </p> -->
+    <p>
+    تم النشر بواسطة بوت مكتبتي : maktbti_bot@
+    </p>
 
         <img id="right" src="./icon/logo.png">
 

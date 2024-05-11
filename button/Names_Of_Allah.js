@@ -69,7 +69,7 @@ export default async (client, Markup) => {
                 </div>
             
                 <div id="bot">
-                    بوت أذكار : adhk2r_bot
+                    تم النشر بواسطة بوت مكتبتي : maktbti_bot@
                 </div>
             
             </body>
@@ -137,14 +137,14 @@ export default async (client, Markup) => {
             #username {
                 position: absolute;
                 bottom: 60px;
-                color: #176B87;
+                color: #FFFFFF;
                 font-size: 16px;
             }
             
             #bot {
                 position: absolute;
                 bottom: 20px;
-                color: #176B87;
+                color: #FFFFFF;
                 font-size: 15px;
                 direction: rtl;
             }`,

@@ -20,12 +20,12 @@ export default async function scheduling_messages(client) {
         // الحصول على اليوم الحالي وتنسيقه باللغة العربية
         const today = moment().locale('ar-SA').format('dddd');
         // أوقات تنفيذ الأحداث
-        const time_quran = ["3:00 PM"];
-        const time_video = ["8:00 AM"];
-        const time_tafseer = ["8:00 PM"];
         const time_Hijri = ["12:02 AM"];
-        const time_names_off_allah = ["6:00 PM"];
         const time_fatwas = ["3:00 AM"];
+        const time_video = ["9:00 AM"];
+        const time_quran = ["3:00 PM"];
+        const time_names_off_allah = ["6:00 PM"];
+        const time_tafseer = ["9:00 PM"];
         // الحصول على جميع المستخدمين
         const GetAllUsers = await get_database_telegram("all");
 

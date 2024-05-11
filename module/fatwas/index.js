@@ -24,8 +24,8 @@ export default async function fatwas(username) {
         const Html = await CrateHtml(username);
         const result = await convertHTMLandCSSToImage({
             outputPath: `./module/fatwas/${Html?.filename}.png`,
-            width: 1200,
-            height: 700,
+            width: 1000,
+            height: 0,
             quality: 100,
             format: 'png',
             retryLimit: 3,

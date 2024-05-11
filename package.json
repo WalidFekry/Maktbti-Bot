@@ -1,7 +1,7 @@
 {
-  "name": "altaqwaa_bot",
-  "description": "Altawaa Bot [ quran, adhkar, video, photo, islamic ]",
-  "version": "2.0.0",
+  "name": "maktbti_bot",
+  "description": "Maktbti Bot [ quran, adhkar, video, photo, islamic ]",
+  "version": "1.0.0",
   "author": "rn0x",
   "license": "MIT",
   "main": "index.js",

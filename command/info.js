@@ -1,9 +1,9 @@
 import database_telegram from '../module/database_telegram.js';
+import get_database_telegram from '../module/get_database_telegram.js';
 
+export default async function share(client, Markup) {
 
-export default async (client, Markup) => {
-
-    client.action("info", async (ctx) => {
+    client.command("info",async (ctx)  => {
 
         let but_1 = [Markup.button.url('جروب البوت 🌿', 'https://t.me/appmaktbti'),Markup.button.url('قناة البوت 🌿', 'https://t.me/app_maktbti')];
         let but_2 = [Markup.button.callback('الرجوع للقائمة الرئيسية 🏠', 'start')];
@@ -25,5 +25,5 @@ export default async (client, Markup) => {
             reply_markup: button.reply_markup,
             disable_web_page_preview: true,
         });
-    });
+        });
 }

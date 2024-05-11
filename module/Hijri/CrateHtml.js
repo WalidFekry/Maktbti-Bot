@@ -85,11 +85,11 @@ export default async function CrateHtml() {
     <div id="footer">
 
         <div id="footer_text">
-            <p>فوائد يومية منتقاة من كتاب البطاقات </p>
-            <small id="website">www.albitaqat.com</small>
+            <p>@maktbti_bot : تم النشر بواسطة بوت مكتبتي </p>
+            <small id="website">www.walid-fekry.com</small>
         </div>
 
-        <img src="logo_up.png" id="logo">
+        <img src="logo.png" id="logo">
     </div> 
 
 </body>
