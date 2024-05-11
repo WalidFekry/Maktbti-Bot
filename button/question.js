@@ -1,5 +1,4 @@
 import database_telegram from '../module/database_telegram.js';
-import fs from 'fs-extra';
 import path from 'path';
 import qimg from '../module/qimg/qimg.js';
 
@@ -33,12 +32,7 @@ export default async (client, Markup) => {
 
         try {
 
-
             const __dirname = path.resolve();
-            const id_chat = ctx?.chat?.id;
-            const username_from = ctx?.from?.username;
-            const type = ctx?.chat?.type;
-            const message_id = ctx?.message?.message_id;
 
             await database_telegram({
                 id: ctx?.chat?.id,
@@ -56,23 +50,19 @@ export default async (client, Markup) => {
                 const options = Qimg.answers.map(answer => answer.answer);
                 const correctAnswerIndex = Qimg.answers.findIndex(answer => answer.t === 1);
                 const questionTEXT = `questionTEXT${Qimg.divID}`;
-                const questionIMG = `questionIMG${Qimg.divID}`;
                 const questionAUDIO = `questionAUDIO${Qimg.divID}`;
                 buttons.push(questionTEXT);
-                buttons.push(questionIMG);
                 buttons.push(questionAUDIO);
 
                 console.log(buttons);
 
                 const but_1 = [Markup.button.callback('🔄', 'question')];
-                const but_2 = [Markup.button.callback('نص 📝', questionTEXT)];
-                const but_3 = [Markup.button.callback('صورة 🖼️', questionIMG)];
-                const but_4 = [Markup.button.callback('صوت 🔊', questionAUDIO)];
-                const but_5 = [Markup.button.callback('الرجوع للقائمة الرئيسية 🏠', 'start')];
-                const button = Markup.inlineKeyboard([but_1, but_2, but_3, but_4, but_5]);
+                const but_2 = [Markup.button.callback('صوت 🔊', questionAUDIO),Markup.button.callback('نص 📝', questionTEXT)];
+                const but_4 = [Markup.button.callback('الرجوع للقائمة الرئيسية 🏠', 'start')];
+                const button = Markup.inlineKeyboard([but_1, but_2,but_4]);
 
 
-                if (Qimg.question.length >= 100) {
+                if (Qimg.question.length >= 99) {
                     let message = `<b>#${Qimg?.category?.split(" ")?.join("_")} | #${Qimg?.topic?.split(" ")?.join("_")}</b>\n\n\n\n`;
                     message += `<b>${Qimg.question}</b>\n\n`;
                     message += Qimg.answers.map((answer, index) => `${index + 1} - ${answer.answer}`).join("\n");
@@ -102,19 +92,16 @@ export default async (client, Markup) => {
                     await ctx.reply(message, { parse_mode: 'HTML' });
                 });
 
-                client.action(questionIMG, async (ctx) => {
-                    await ctx.replyWithDocument({ source: Qimg?.buffer.IMG1, filename: `${Qimg.question?.split(" ")?.join("_")}.jpeg` });
-                    await ctx.replyWithDocument({ source: Qimg?.buffer.IMG2, filename: `${Qimg.correctAnswer.answer?.split(" ")?.join("_")}.jpeg` });
-                });
-
                 client.action(questionAUDIO, async (ctx) => {
-                    const filename = `${Qimg.question?.split(" ")?.join("_")}.mp3`;
-                    await ctx.replyWithAudio({ source: path.join(__dirname, Qimg?.questionAudio), filename: filename }, {
+
+                    const question = "السؤال";
+                    await ctx.replyWithAudio({ source: path.join(__dirname, Qimg?.questionAudio), filename: question }, {
                         parse_mode: 'HTML',
                         caption: `<b>${Qimg.question}</b>`,
                     });
 
-                    await ctx.replyWithAudio({ source: path.join(__dirname, Qimg?.correctAnswer.audio), filename: `${Qimg.correctAnswer.answer}.mp3` }, {
+                    const answer = "الجواب";
+                    await ctx.replyWithAudio({ source: path.join(__dirname, Qimg?.correctAnswer.audio), filename: answer }, {
                         parse_mode: 'HTML',
                         caption: `<b>${Qimg.correctAnswer.answer}</b>`,
                     });
