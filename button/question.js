@@ -54,7 +54,7 @@ export default async (client, Markup) => {
                 buttons.push(questionTEXT);
                 buttons.push(questionAUDIO);
 
-                console.log(buttons);
+                // console.log(buttons);
 
                 const but_1 = [Markup.button.callback('🔄', 'question')];
                 const but_2 = [Markup.button.callback('صوت 🔊', questionAUDIO),Markup.button.callback('نص 📝', questionTEXT)];
