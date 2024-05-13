@@ -29,7 +29,8 @@ export default async function end(client, Markup) {
         message += '8- آية وتفسير 🌾 \n'
         message += '9- فتاوى ابن باز رحمه الله 🔊 \n'
         message += '10- اسئلة دينية ⁉️ \n'
-        message += '11- التاريخ الهجري 📅 \n\n'
+        message += '11- التاريخ الهجري 📅 \n'
+        message += '12- الرقية الشرعية🌸\n\n'
         message += 'إحصائيات البوت ⚡\n\n'
         message += `عدد المحادثات : ${getUserAll.length}\n`
         message += `عدد المجموعات : ${getSupergroup.length}\n`
