@@ -1,7 +1,7 @@
-# بوت التقوى
+# بوت مكتبتي
 
 <div align="center">
-  <img align="center" src="./logo.jpg">
+  <img align="center" src="./logo.png">
 
   <br>
   <br>
@@ -12,7 +12,7 @@
 
   يقول النبي ﷺ: من دل على خير؛ فله مثل أجر فاعله 
 
-  [مثال على بوت التقوى](https://t.me/adhk2r_bot)
+  [مثال على بوت مكتبتي](https://t.me/maktbti_bot)
 
 </div>
 
@@ -29,6 +29,7 @@
 - آية وتفسير | نص و صورة
 - التاريخ الهجري | نص و صورة
 -  اسئلة دينية - صوت وصورة
+-  الرقية الشرعية - صوت وصورة
 
 
 # المتطلبات
@@ -42,7 +43,7 @@
 ```json
 {
     "token_telegram": "5798247559:AAHdBHKKbA1l6mg2PA5EijTLcVNqEsBR-6U",
-    "executablePath": "/snap/bin/chromium",
+    "executablePath": "/usr/bin/chromium-browser",
 }
 ```
 
@@ -89,12 +90,26 @@ MacOS:
 # تثبيت 
 
 ```bash
-git clone https://github.com/Alsarmad/altaqwaa_bot
-cd altaqwaa_bot
+git clone https://github.com/WalidFekry/Maktbti-Bot
+cd Maktbti-Bot
 npm i
 npm start
 ```
 
+# Startup with PM2
+
+```bash
+npm install pm2 -g
+pm2 start index.js --name Maktbti-Bot
+pm2 startup
+pm2 save
+```
+
+# Auto restart with PM2
+
+```bash
+pm2 restart Maktbti-Bot --cron "15 23 * * *"
+```
 
 #  مثال على آية وتفسير و التاريخ الهجري واسماء الله الحسنى و فتاوى الشيخ ابن باز رحمه الله
 
@@ -115,10 +130,10 @@ npm start
   <br>
   <br>
 
-  <img align="center" src="./fatwas.png">
+  <img align="center" src="./fatwas.jpg">
 
   <br>
   <br>
 
-  وفي الختام لاتنسنا من دعوة صالة بظهر الغيب .
+  وفي الختام لاتنسنا من دعوة صالحة بظهر الغيب .
 </div>
