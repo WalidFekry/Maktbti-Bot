@@ -58,8 +58,8 @@ export default async function end(client, Markup) {
         const but_3 = [Markup.button.callback('فيديو 🎥', 'video'), Markup.button.callback('صور 🖼️', 'photo')];
         const but_4 = [Markup.button.callback('آية وتفسير 🌾', 'tafseer'), Markup.button.callback('أسماء الله الحسنى ✨', 'Names_Of_Allah')];
         const but_5 = [Markup.button.callback('التاريخ الهجري 📅', 'Hijri'), Markup.button.callback('فتاوى ابن باز 🔊', 'fatwas')];
-        const but_6 = [Markup.button.callback('معلومات حول البوت ℹ️', 'info'),Markup.button.callback('اسئلة دينية ⁉️', 'question')];
-        const but_7 = [Markup.button.callback('مشاركة البوت 🔃', 'share')];
+        const but_6 = [Markup.button.callback('الرقية الشرعية 🌸', 'roqia'),Markup.button.callback('اسئلة دينية ⁉️', 'question')];
+        const but_7 = [Markup.button.callback('معلومات حول البوت ℹ️', 'info'),Markup.button.callback('مشاركة البوت 🔃', 'share')];
         const button = Markup.inlineKeyboard([but_1, but_2, but_3, but_4, but_5, but_6, but_7]);
 
         await ctx.reply(message, { parse_mode: 'HTML', reply_markup: button.reply_markup, reply_to_message_id: message_id });

@@ -8,25 +8,25 @@ export default async (client, Markup) => {
     let buttons = []
 
     // Function to handle button callbacks
-    async function handleCallback(ctx, callbackData, next) {
-        try {
+    // async function handleCallback(ctx, callbackData, next) {
+    //     try {
 
-            if (!buttons.includes(callbackData)) {
-                const but_1 = [Markup.button.callback('ابدأ سؤال جديد ⁉️', 'question')];
-                const but_2 = [Markup.button.callback('الرجوع للقائمة الرئيسية 🏠', 'start')];
-                const button = Markup.inlineKeyboard([but_1, but_2]);
-                const notificationMessage = "انتهت الفترة الزمنية لهذه الأزرار ⌛. شكرًا لمشاركتك!";
-                await ctx.reply(notificationMessage, { parse_mode: 'HTML', reply_markup: button.reply_markup });
+    //         if (!buttons.includes(callbackData)) {
+    //             const but_1 = [Markup.button.callback('ابدأ سؤال جديد ⁉️', 'question')];
+    //             const but_2 = [Markup.button.callback('الرجوع للقائمة الرئيسية 🏠', 'start')];
+    //             const button = Markup.inlineKeyboard([but_1, but_2]);
+    //             const notificationMessage = "انتهت الفترة الزمنية لهذه الأزرار ⌛. شكرًا لمشاركتك!";
+    //             await ctx.reply(notificationMessage, { parse_mode: 'HTML', reply_markup: button.reply_markup });
 
                 
-            } else {
-                next();
-            }
+    //         } else {
+    //             next();
+    //         }
 
-        } catch (error) {
-            console.error(error);
-        }
-    }
+    //     } catch (error) {
+    //         console.error(error);
+    //     }
+    // }
 
     client.action("question", async (ctx) => {
 
@@ -62,7 +62,7 @@ export default async (client, Markup) => {
                 const button = Markup.inlineKeyboard([but_1, but_2,but_4]);
 
 
-                if (Qimg.question.length >= 99) {
+                if (Qimg.question.length >= 95) {
                     let message = `<b>#${Qimg?.category?.split(" ")?.join("_")} | #${Qimg?.topic?.split(" ")?.join("_")}</b>\n\n\n\n`;
                     message += `<b>${Qimg.question}</b>\n\n`;
                     message += Qimg.answers.map((answer, index) => `${index + 1} - ${answer.answer}`).join("\n");
@@ -116,8 +116,8 @@ export default async (client, Markup) => {
     });
 
     // Handle callbacks outside of the action block
-    client.on('callback_query', async (ctx, next) => {
-        const callbackData = ctx.update.callback_query.data;
-        await handleCallback(ctx, callbackData, next);
-    });
+    // client.on('callback_query', async (ctx, next) => {
+    //     const callbackData = ctx.update.callback_query.data;
+    //     await handleCallback(ctx, callbackData, next);
+    // });
 }

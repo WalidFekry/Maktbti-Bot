@@ -12,6 +12,7 @@ import info from './info.js';
 import fatwas from './fatwas.js';
 import question from './question.js';
 import share from './share.js';
+import roqia from './roqia.js';
 
 export default async function button(client, Markup) {
 
@@ -30,7 +31,9 @@ export default async function button(client, Markup) {
         await info(client, Markup);
         await fatwas(client, Markup);
         await share(client, Markup);
+        await roqia(client, Markup);
         await question(client, Markup);
+    
     
 
     } catch (error) {
