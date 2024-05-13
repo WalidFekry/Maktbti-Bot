@@ -1,4 +1,4 @@
-# بوت مكتبتي
+# بوت مكتبتي - Maktbti
 
 <div align="center">
   <img align="center" src="./logo.png">
@@ -108,7 +108,7 @@ pm2 save
 # Auto restart with PM2
 
 ```bash
-pm2 restart Maktbti-Bot --cron "15 23 * * *"
+pm2 restart Maktbti-Bot --cron "15 23 * * *" //Change to 0 to disable
 ```
 
 #  مثال على آية وتفسير و التاريخ الهجري واسماء الله الحسنى و فتاوى الشيخ ابن باز رحمه الله
