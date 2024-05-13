@@ -1,12 +1,10 @@
 import database_telegram from '../module/database_telegram.js';
 import path from 'path';
 import fs from 'fs-extra';
-import { url } from 'inspector';
 
 
 export default async (client, Markup) => {
 
-    let buttons = []
 
 
     client.action("roqia", async (ctx) => {
@@ -25,7 +23,6 @@ export default async (client, Markup) => {
             const photo = fs.readJsonSync(path.join(__dirname, './files/json/roqia.json'));
             const random_photo = photo[Math.floor(Math.random() * photo.length)];
             const audio = ["https://post.walid-fekry.com/audios/roqia/1.mp3", "https://post.walid-fekry.com/audios/roqia/2.mp3", "https://post.walid-fekry.com/audios/roqia/3.mp3", "https://post.walid-fekry.com/audios/roqia/4.mp3", "https://post.walid-fekry.com/audios/roqia/5.mp3", "https://post.walid-fekry.com/audios/roqia/6.mp3"];
-            const random_audio = audio[Math.floor(Math.random() * audio.length)];
             const but_1 = [Markup.button.callback('🔄', 'roqia')];
             const but_2 = [Markup.button.callback('صوت 🔊', 'roqia_audio'), Markup.button.callback('نص 📝', 'roqia_text')];
             const but_4 = [Markup.button.callback('الرجوع للقائمة الرئيسية 🏠', 'start')];
@@ -57,8 +54,9 @@ export default async (client, Markup) => {
                 message += "والله أعلم ."
                 await ctx.reply(message, { parse_mode: 'HTML', reply_markup: button_2.reply_markup, });
             });
-
+            
             client.action('roqia_audio', async (ctx) => {
+                const random_audio = audio[Math.floor(Math.random() * audio.length)];
                 const name = "الرقية الشرعية";
                 await ctx.replyWithAudio({ url: random_audio, filename: name }, {
                     reply_markup: button_2.reply_markup,
