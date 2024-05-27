@@ -24,7 +24,7 @@ export default async function scheduling_messages(client) {
         const time_Hijri = ["12:02 AM"];
         const time_fatwas = ["3:00 AM"];
         const time_video = ["9:00 AM"];
-        const time_photo = ["12:02 PM"];
+        const time_photo = ["12:02 PM","6:00 AM"];
         const time_quran = ["3:00 PM"];
         const time_names_off_allah = ["6:00 PM"];
         const time_tafseer = ["9:00 PM"];

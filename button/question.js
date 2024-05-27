@@ -62,7 +62,7 @@ export default async (client, Markup) => {
                 const button = Markup.inlineKeyboard([but_1, but_2,but_4]);
 
 
-                if (Qimg.question.length >= 95) {
+                if (Qimg.question.length >= 85) {
                     let message = `<b>#${Qimg?.category?.split(" ")?.join("_")} | #${Qimg?.topic?.split(" ")?.join("_")}</b>\n\n\n\n`;
                     message += `<b>${Qimg.question}</b>\n\n`;
                     message += Qimg.answers.map((answer, index) => `${index + 1} - ${answer.answer}`).join("\n");
