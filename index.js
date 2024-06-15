@@ -10,6 +10,7 @@ import command from './command/index.js';
 import button from "./button/index.js";
 import error_handling from './module/error_handling.js';
 import scheduling_messages from './module/scheduling_messages.js';
+import commandAdmin from './commandAdmin.js';
 
 const __dirname = path.resolve();
 
@@ -34,6 +35,7 @@ async function teleAltaqwaa() {
 
     // الأحداث
 
+    await commandAdmin(client, config);
     await command(client, Markup);
     await button(client, Markup);
     await join_left(client);
