@@ -36,7 +36,7 @@ async function teleAltaqwaa() {
     // الأحداث
 
     await commandAdmin(client, config);
-    await command(client, Markup);
+    await command(client, Markup, config);
     await button(client, Markup);
     await join_left(client);
     await EventText(client);
