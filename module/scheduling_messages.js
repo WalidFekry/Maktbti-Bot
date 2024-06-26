@@ -22,21 +22,18 @@ export default async function scheduling_messages(client) {
 
         // أوقات تنفيذ الأحداث
         const time_Hijri = ["12:02 AM"];
-        const time_fatwas = ["3:00 AM"];
-        const time_video = ["9:00 AM"];
-        const time_photo = ["12:02 PM","6:00 AM"];
+        const time_video = ["3:00 AM","9:00 AM"];
+        const time_photo = ["6:00 AM","12:02 PM"];
         const time_quran = ["3:00 PM"];
-        const time_names_off_allah = ["6:00 PM"];
-        const time_tafseer = ["9:00 PM"];
+        const time_tafseer = ["6:00 PM"];
+        const time_fatwas = ["3:00 AM"]; //stopped
+        const time_names_off_allah = ["6:00 PM"]; //stopped
         
         // الحصول على جميع المستخدمين
         const GetAllUsers = await get_database_telegram("all");
 
         // تنفيذ الأحداث المتعلقة بتلاوة القرآن الكريم
         if (time_quran.includes(time)) {
-            console.log("-------------------------------")
-            console.log("Done sent time_quran 3:00 PM");
-            console.log("-------------------------------")
             // قراءة ملف JSON يحتوي على تفاصيل تلاوات القرآن
             const mp3quran = fs.readJsonSync(path.join(__dirname, './files/json/mp3quran.json'));
             for (const item of GetAllUsers) {
@@ -63,12 +60,12 @@ export default async function scheduling_messages(client) {
                     }
                 }
             }
+            console.log("-------------------------------")
+            console.log("Done sent time_quran 3:00 PM");
+            console.log("-------------------------------")
         }
         // تنفيذ الأحداث المتعلقة بمشاركة الصور
         else if (time_photo.includes(time)) {
-            console.log("-------------------------------")
-            console.log("Done sent time_photo 12:02 PM");
-            console.log("-------------------------------")
             const photo = fs.readJsonSync(path.join(__dirname, './files/json/photo.json'));
             for (const item of GetAllUsers) {
                 if (item?.evenPost && item?.permissions?.canSendMessages || item?.type === "private") {
@@ -80,12 +77,12 @@ export default async function scheduling_messages(client) {
                     }
                 }
             }
+            console.log("-------------------------------")
+            console.log("Done sent time_photo 6:00 AM, 12:02 PM");
+            console.log("-------------------------------")
         }
         // تنفيذ الأحداث المتعلقة بمشاركة مقاطع الفيديو
         else if (time_video.includes(time)) {
-            console.log("-------------------------------")
-            console.log("Done sent time_video 9:00 AM");
-            console.log("-------------------------------")
             // قراءة ملف JSON يحتوي على تفاصيل مقاطع الفيديو
             const video = fs.readJsonSync(path.join(__dirname, './files/json/video.json'));
             for (const item of GetAllUsers) {
@@ -98,12 +95,12 @@ export default async function scheduling_messages(client) {
                     }
                 }
             }
+            console.log("-------------------------------")
+            console.log("Done sent time_video 9:00 AM");
+            console.log("-------------------------------")
         }
         // تنفيذ الأحداث المتعلقة بمشاركة التفسير الميسر
         else if (time_tafseer.includes(time)) {
-            console.log("-------------------------------")
-            console.log("Done sent time_tafseer 9:00 PM");
-            console.log("-------------------------------")
             // الحصول على تفاصيل التفسير الميسر
             const TFSMouaser = await tafseerMouaser(path.join(__dirname, './tafseerMouaser.jpeg')).catch(e => console.log(e));
             for (const item of GetAllUsers) {
@@ -121,12 +118,12 @@ export default async function scheduling_messages(client) {
                     }
                 }
             }
+            console.log("-------------------------------")
+            console.log("Done sent time_tafseer 9:00 PM");
+            console.log("-------------------------------")
         }
         // تنفيذ الأحداث المتعلقة بمشاركة التقويم الهجري
         else if (time_Hijri.includes(time)) {
-            console.log("-------------------------------")
-            console.log("Done sent time_Hijri 12:02 AM");
-            console.log("-------------------------------")
             const Hijri_ = await Hijri(path.join(__dirname, './Hijri.jpeg')).catch(e => console.log(e));
             for (const item of GetAllUsers) {
                 if (item?.evenPost && item?.permissions?.canSendMessages || item?.type === "private") {
@@ -146,9 +143,15 @@ export default async function scheduling_messages(client) {
                     }
                 }
             }
+            console.log("-------------------------------")
+            console.log("Done sent time_Hijri 12:02 AM");
+            console.log("-------------------------------")
         }
         // تنفيذ الأحداث المتعلقة بمشاركة اسماء الله الحسنى
         else if (time_names_off_allah.includes(time) && false) {
+            console.log("-------------------------------")
+            console.log("Done sent time_names_off_allah 6:00 PM");
+            console.log("-------------------------------")
             // الحصول على تفاصيل التفسير الميسر
             const Names_Of_Allah = fs.readJsonSync(path.join(__dirname, './files/json/Names_Of_Allah.json'));
             const puppeteerConfig = {
@@ -308,6 +311,9 @@ export default async function scheduling_messages(client) {
         }
         // تنفيذ الأحداث المتعلقة بمشاركة فتاوى ابن باز رحمه الله
         else if (time_fatwas.includes(time) && false) {
+            console.log("-------------------------------")
+            console.log("Done sent time_fatwas 3:00 AM");
+            console.log("-------------------------------")
             for (const item of GetAllUsers) {
                 if (item?.evenPost && item?.permissions?.canSendMessages && item?.type !== "private") {
                     const nameUser = item?.username ? `@${item?.username}` : item?.name;
