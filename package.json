@@ -1,7 +1,7 @@
 {
   "name": "maktbti_bot",
   "description": "Maktbti Bot [ quran, adhkar, video, photo, islamic ]",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "author": "rn0x",
   "license": "MIT",
   "main": "index.js",
@@ -30,7 +30,8 @@
     "moment-hijri": "^2.1.2",
     "node-html-to-image": "^4.0.0",
     "pug": "^3.0.2",
-    "puppeteer": "^21.3.5",
+    "puppeteer": "^22.6.4",
+    "puppeteer-cluster": "^0.24.0",
     "telegraf": "^4.15.3"
   },
   "devDependencies": {
