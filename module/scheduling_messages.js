@@ -22,10 +22,10 @@ export default async function scheduling_messages(client) {
 
         // أوقات تنفيذ الأحداث
         const time_Hijri = ["12:02 AM"];
-        const time_video = ["3:00 AM","9:00 AM"];
-        const time_photo = ["6:00 AM","12:02 PM"];
-        const time_quran = ["3:00 PM"];
+        const time_video = ["4:00 AM","11:30 AM"];
+        const time_photo = ["8:00 AM","3:00 PM"];
         const time_tafseer = ["6:00 PM"];
+        const time_quran = ["9:00 PM"];
         const time_fatwas = ["3:00 AM"]; //stopped
         const time_names_off_allah = ["6:00 PM"]; //stopped
         
@@ -61,7 +61,7 @@ export default async function scheduling_messages(client) {
                 }
             }
             console.log("-------------------------------")
-            console.log("Done sent time_quran 3:00 PM");
+            console.log("Done sent time_quran 9:00 PM");
             console.log("-------------------------------")
         }
         // تنفيذ الأحداث المتعلقة بمشاركة الصور
@@ -78,7 +78,7 @@ export default async function scheduling_messages(client) {
                 }
             }
             console.log("-------------------------------")
-            console.log("Done sent time_photo 6:00 AM, 12:02 PM");
+            console.log("Done sent time_photo 8:00 AM, 3:00 PM");
             console.log("-------------------------------")
         }
         // تنفيذ الأحداث المتعلقة بمشاركة مقاطع الفيديو
@@ -96,7 +96,7 @@ export default async function scheduling_messages(client) {
                 }
             }
             console.log("-------------------------------")
-            console.log("Done sent time_video 9:00 AM");
+            console.log("Done sent time_video 4:00 AM, 11:30 AM");
             console.log("-------------------------------")
         }
         // تنفيذ الأحداث المتعلقة بمشاركة التفسير الميسر
@@ -119,7 +119,7 @@ export default async function scheduling_messages(client) {
                 }
             }
             console.log("-------------------------------")
-            console.log("Done sent time_tafseer 9:00 PM");
+            console.log("Done sent time_tafseer 6:00 PM");
             console.log("-------------------------------")
         }
         // تنفيذ الأحداث المتعلقة بمشاركة التقويم الهجري
