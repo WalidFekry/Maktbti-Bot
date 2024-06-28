@@ -22,10 +22,10 @@ export default async function scheduling_messages(client) {
 
         // أوقات تنفيذ الأحداث
         const time_Hijri = ["12:02 AM"];
-        const time_video = ["4:00 AM","11:30 AM"];
-        const time_photo = ["8:00 AM","3:00 PM"];
-        const time_tafseer = ["6:00 PM"];
-        const time_quran = ["9:00 PM"];
+        const time_video = ["4:00 AM","12:02 PM"];
+        const time_photo = ["8:00 AM","4:00 PM"];
+        const time_tafseer = ["8:00 PM"];
+        const time_quran = ["9:00 PM"]; //stopped
         const time_fatwas = ["3:00 AM"]; //stopped
         const time_names_off_allah = ["6:00 PM"]; //stopped
         
@@ -33,7 +33,7 @@ export default async function scheduling_messages(client) {
         const GetAllUsers = await get_database_telegram("all");
 
         // تنفيذ الأحداث المتعلقة بتلاوة القرآن الكريم
-        if (time_quran.includes(time)) {
+        if (time_quran.includes(time) && false) {
             // قراءة ملف JSON يحتوي على تفاصيل تلاوات القرآن
             const mp3quran = fs.readJsonSync(path.join(__dirname, './files/json/mp3quran.json'));
             for (const item of GetAllUsers) {
