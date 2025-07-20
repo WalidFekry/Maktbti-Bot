@@ -22,8 +22,8 @@ export default async function scheduling_messages(client) {
 
         // أوقات تنفيذ الأحداث
         const time_Hijri = ["12:02 AM"];
-        const time_video = ["4:00 AM","12:02 PM"];
-        const time_photo = ["8:00 AM","4:00 PM"];
+        const time_video = ["4:00 AM","12:02 PM"]; //stopped
+        const time_photo = ["8:00 AM","4:00 PM","4:00 AM","12:02 PM"];
         const time_tafseer = ["8:00 PM"];
         const time_quran = ["9:00 PM"]; //stopped
         const time_fatwas = ["3:00 AM"]; //stopped
@@ -82,7 +82,7 @@ export default async function scheduling_messages(client) {
             console.log("-------------------------------")
         }
         // تنفيذ الأحداث المتعلقة بمشاركة مقاطع الفيديو
-        else if (time_video.includes(time)) {
+        else if (time_video.includes(time) && false) {
             // قراءة ملف JSON يحتوي على تفاصيل مقاطع الفيديو
             const video = fs.readJsonSync(path.join(__dirname, './files/json/video.json'));
             for (const item of GetAllUsers) {
