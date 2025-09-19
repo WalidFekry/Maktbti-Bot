@@ -8,6 +8,17 @@ import Hijri from './Hijri/index.js';
 import error_handling from './error_handling.js';
 import convertHTMLandCSSToImage from '../module/convertHTMLandCSSToImage.js';
 import fatwas from './fatwas/index.js';
+import axios from "axios";
+
+async function isValidVideo(url) {
+    try {
+        const response = await axios.head(url, { timeout: 5000 });
+        const contentType = response.headers["content-type"] || "";
+        return response.status === 200 && contentType.startsWith("video");
+    } catch (error) {
+        return false;
+    }
+}
 
 export default async function scheduling_messages(client) {
     // تنفيذ الكود بشكل متكرر كل دقيقة
@@ -22,8 +33,8 @@ export default async function scheduling_messages(client) {
 
         // أوقات تنفيذ الأحداث
         const time_Hijri = ["12:02 AM"];
-        const time_video = ["4:00 AM","12:02 PM"]; //stopped
-        const time_photo = ["8:00 AM","4:00 PM","4:00 AM","12:02 PM"];
+        const time_video = ["4:00 AM","12:02 PM"];
+        const time_photo = ["8:00 AM","4:00 PM"];
         const time_tafseer = ["8:00 PM"];
         const time_quran = ["9:00 PM"]; //stopped
         const time_fatwas = ["3:00 AM"]; //stopped
@@ -82,21 +93,34 @@ export default async function scheduling_messages(client) {
             console.log("-------------------------------")
         }
         // تنفيذ الأحداث المتعلقة بمشاركة مقاطع الفيديو
-        else if (time_video.includes(time) && false) {
+        else if (time_video.includes(time) && true) {
             // قراءة ملف JSON يحتوي على تفاصيل مقاطع الفيديو
             const video = fs.readJsonSync(path.join(__dirname, './files/json/video.json'));
+            const photo = fs.readJsonSync(path.join(__dirname, "./files/json/photo.json"));
             for (const item of GetAllUsers) {
                 if (item?.evenPost && item?.permissions?.canSendMessages || item?.type === "private") {
                     try {
-                        const random = video[Math.floor(Math.random() * video.length)];
-                        await sendVideoWithRetry(item?.id, { url: random?.path });
+                    let randomVideo = video[Math.floor(Math.random() * video.length)];
+                    let isValid = await isValidVideo(randomVideo?.path);
+                    
+                    if (isValid) {
+                        // الفيديو صالح → ابعته
+                        await sendVideoWithRetry(item?.id, { url: randomVideo?.path });
+                    } else {
+                        // الفيديو مش شغال → ابعت صورة
+                        let randomPhoto = photo[Math.floor(Math.random() * photo.length)];
+                        await sendPhotoWithRetry(item?.id, { url: randomPhoto?.path });
+                        console.warn(
+                        `[${new Date().toISOString()}] الفيديو مش شغال (${randomVideo?.path}) — بعت صورة بدل الفيديو للمستخدم ${item?.id}`
+                        );
+                    }
                     } catch (error) {
                         await error_handling(error, client);
                     }
                 }
             }
             console.log("-------------------------------")
-            console.log("Done sent time_video 4:00 AM, 11:30 AM");
+            console.log("Done sent time_video 4:00 AM, 12:02 PM");
             console.log("-------------------------------")
         }
         // تنفيذ الأحداث المتعلقة بمشاركة التفسير الميسر
