@@ -32,13 +32,21 @@ export default async function commandAdmin(client, config) {
       }
     }
 
-    // ✅ Generalized Send Function with Batch
-    async function sendToUsers(users, sendFn) {
+    // ✅ Generalized Send Function with Batch + Detailed Logger
+    async function sendToUsers(users, sendFn, userType, action) {
       const BATCH_SIZE = 50;
       const BATCH_DELAY = 2000;
 
       let sent = 0;
       let failed = 0;
+
+      const startTime = new Date();
+      console.log("========================================");
+      console.log(`🚀 Start sending ${action}`);
+      console.log(`📌 User Type: ${userType}`);
+      console.log(`👥 Total Users Fetched: ${users.length}`);
+      console.log(`🕒 Start Time: ${startTime.toLocaleString()}`);
+      console.log("========================================");
 
       for (let i = 0; i < users.length; i += BATCH_SIZE) {
         const batch = users.slice(i, i + BATCH_SIZE);
@@ -56,17 +64,28 @@ export default async function commandAdmin(client, config) {
         );
 
         console.log(
-          `✅ Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(
+          `📦 Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(
             users.length / BATCH_SIZE
-          )} done. Waiting ${BATCH_DELAY / 1000}s...`
+          )} | ✅ Sent: ${sent} | ❌ Failed: ${failed}`
         );
 
         if (i + BATCH_SIZE < users.length) {
+          console.log(`⏳ Waiting ${BATCH_DELAY / 1000}s before next batch...`);
           await new Promise((res) => setTimeout(res, BATCH_DELAY));
         }
       }
 
-      console.log(`📊 Total: ${users.length} | ✅ Sent: ${sent} | ❌ Failed: ${failed}`);
+      const endTime = new Date();
+      const elapsed = ((endTime - startTime) / 1000).toFixed(2);
+
+      console.log("========================================");
+      console.log(`🏁 Finished sending ${action}`);
+      console.log(`📊 Total Users: ${users.length}`);
+      console.log(`✅ Sent: ${sent}`);
+      console.log(`❌ Failed: ${failed}`);
+      console.log(`🕒 End Time: ${endTime.toLocaleString()}`);
+      console.log(`⏱️ Duration: ${elapsed} seconds`);
+      console.log("========================================");
     }
 
     // ✅ Fetch Users
@@ -104,12 +123,16 @@ export default async function commandAdmin(client, config) {
 
         const users = await getDatabaseUsers(userType);
 
-        await sendToUsers(users, (chatId) =>
-          telegramWithRetry(
-            `send${type.charAt(0).toUpperCase() + type.slice(1)}`,
-            chatId,
-            [media.file_id, { parse_mode: 'HTML', caption }]
-          )
+        await sendToUsers(
+          users,
+          (chatId) =>
+            telegramWithRetry(
+              `send${type.charAt(0).toUpperCase() + type.slice(1)}`,
+              chatId,
+              [media.file_id, { parse_mode: 'HTML', caption }]
+            ),
+          userType,
+          `${type} message`
         );
       });
     }
@@ -138,8 +161,12 @@ export default async function commandAdmin(client, config) {
 
       const users = await getDatabaseUsers(userType);
 
-      await sendToUsers(users, (chatId) =>
-        telegramWithRetry('sendMessage', chatId, [message, { parse_mode: 'HTML' }])
+      await sendToUsers(
+        users,
+        (chatId) =>
+          telegramWithRetry('sendMessage', chatId, [message, { parse_mode: 'HTML' }]),
+        userType,
+        "text message"
       );
     });
 
