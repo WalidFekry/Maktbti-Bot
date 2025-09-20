@@ -134,7 +134,7 @@ export default async function scheduling_messages(client) {
     const time = moment().locale("en-EN").format("LT");
 
     // الأوقات
-    const time_Hijri = ["12:26 AM"];
+    const time_Hijri = ["12:02 AM"];
     const time_video = ["4:00 AM", "12:02 PM"];
     const time_photo = ["8:00 AM", "4:00 PM"];
     const time_tafseer = ["8:00 PM"];
