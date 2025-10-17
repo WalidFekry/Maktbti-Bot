@@ -133,20 +133,38 @@ async function broadcastOptimized(client, users, fn, label = "event") {
   console.log(`🕒 Duration: ${(endTime - startTime) / 1000}s`);
   console.log("═════════════════════════════════════════\n");
   try {
-  const summary = `📢 <b>Broadcast Done</b>\n\n` +
-    `📌 النوع: ${label}\n` +
-    `✅ تم الإرسال: ${success}\n` +
-    `❌ فشل: ${failed}\n` +
-    `👥 المستخدمين: ${users.length}\n` +
-    `🕒 المدة: ${((endTime - startTime) / 1000).toFixed(1)} ثانية\n` +
-    `📅 الوقت: ${new Date().toLocaleString("ar-EG")}`;
+    const endTime = new Date();
 
-  await client.telegram.sendMessage(ADMIN_ID, summary, {
-    parse_mode: "HTML",
-  });
-} catch (err) {
-  console.log("⚠️ فشل إرسال إشعار الإدارة:", err.message);
-}
+    // 🕒 حساب المدة بصيغة "ساعات - دقائق - ثواني"
+    const totalSeconds = Math.floor((endTime - startTime) / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    let durationText = "";
+    if (hours > 0) durationText += `${hours} ساعة `;
+    if (minutes > 0) durationText += `${minutes} دقيقة `;
+    durationText += `${seconds} ثانية`;
+
+    const startText = new Date(startTime).toLocaleString("ar-EG");
+    const endText = new Date(endTime).toLocaleString("ar-EG");
+
+    const summary =
+      `📢 <b>Broadcast Done</b>\n\n` +
+      `📌 النوع: ${label}\n` +
+      `✅ تم الإرسال: ${success}\n` +
+      `❌ فشل: ${failed}\n` +
+      `👥 المستخدمين: ${users.length}\n` +
+      `🕒 المدة: ${durationText}\n` +
+      `🕓 البداية: ${startText}\n` +
+      `🕔 النهاية: ${endText}`;
+
+    await client.telegram.sendMessage(ADMIN_ID, summary, {
+      parse_mode: "HTML",
+    });
+  } catch (err) {
+    console.log("⚠️ فشل إرسال إشعار الإدارة:", err.message);
+  }
 }
 
 // ✅ الجدولة الأساسية
@@ -279,41 +297,62 @@ export default async function scheduling_messages(client) {
       const mp3quran = fs.readJsonSync(
         path.join(__dirname, "./files/json/mp3quran.json")
       );
-      const random = mp3quran[Math.floor(Math.random() * mp3quran.length)];
-      const mp3quranRandom =
-        random?.audio[Math.floor(Math.random() * random?.audio.length)];
-      const FileSize = await getFileSize(mp3quranRandom?.link);
 
-      let message = `▪️ <b>القارئ:</b> ${random?.name}\n`;
-      message += `▪️ <b>الرواية:</b> ${random?.rewaya}\n`;
-      message += `▪️ <b>السورة:</b> ${mp3quranRandom?.name}\n`;
-      message += `▪️ <b>مكان النزول:</b> ${mp3quranRandom?.descent} | ${mp3quranRandom?.descent_english}`;
+      let random,
+        mp3quranRandom,
+        FileSizeNum = 0,
+        FileSizeText = "0 MB";
+      let attempts = 0;
 
+      // 🔁 اختيار تلاوة مناسبة (أقل من 20MB فقط)
+      while (attempts < 15) {
+        attempts++;
+        random = mp3quran[Math.floor(Math.random() * mp3quran.length)];
+        mp3quranRandom =
+          random?.audio[Math.floor(Math.random() * random?.audio.length)];
+
+        const FileSize = await getFileSize(mp3quranRandom?.link);
+        FileSizeText = FileSize;
+        FileSizeNum = parseFloat(FileSize);
+
+        console.log(
+          `🔁 محاولة ${attempts}: ${random?.name} - ${mp3quranRandom?.name} (${FileSizeText})`
+        );
+
+        // ✅ لو الحجم أقل من 20 ميجا نكمل
+        if (!isNaN(FileSizeNum) && FileSizeNum < 20) break;
+      }
+
+      // ⛔ فشل في العثور على ملف مناسب
+      if (isNaN(FileSizeNum) || FileSizeNum >= 20) {
+        console.warn("⚠️ لم يتم العثور على تلاوة أقل من 20MB بعد عدة محاولات.");
+        return;
+      }
+
+      // ✅ تم العثور على تلاوة مناسبة
       console.log(
-        `🎙️ Selected: ${random?.name} - ${mp3quranRandom?.name} (${FileSize})`
+        `🎙️ Selected: ${random?.name} - ${mp3quranRandom?.name} (${FileSizeText})`
       );
 
+      // 🔹 تجهيز الرسالة
+      let message = `▪️ <b>القارئ:</b> ${random?.name}\n`;
+      message += `▪️ <b>الرواية:</b> ${random?.rewaya}\n`;
+      message += `▪️ <b>السورة:</b> ${mp3quranRandom?.name} | ${mp3quranRandom?.translation}\n`;
+      message += `▪️ <b>مكان النزول:</b> ${mp3quranRandom?.descent} | ${mp3quranRandom?.descent_english}`;
+
+      // 📢 إرسال نفس التلاوة لجميع المستخدمين
       await broadcastOptimized(
         client,
         GetAllUsers,
         async (user) => {
-          let userMessage = message; // نسخة مستقلة لكل مستخدم
-
-          if (parseFloat(FileSize) >= 20) {
-            userMessage += `\n\n🎧 <b>رابط التلاوة:</b> ${mp3quranRandom?.link}`;
-            await client.telegram.sendMessage(user.id, userMessage, {
-              parse_mode: "HTML",
-            });
-          } else {
-            await sendAudioWithRetry(
-              client,
-              user.id,
-              { url: mp3quranRandom?.link },
-              userMessage
-            );
-          }
+          await sendAudioWithRetry(
+            client,
+            user.id,
+            { url: mp3quranRandom?.link },
+            message
+          );
         },
-        "time_quran"
+        `time_quran (${random?.name} - ${mp3quranRandom?.name})`
       );
     }
   }, 60000);
