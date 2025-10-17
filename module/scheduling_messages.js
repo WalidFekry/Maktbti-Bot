@@ -77,6 +77,7 @@ function estimateBroadcastTime(usersCount, batchSize, batchDelay) {
 
 // ✅ نظام الإرسال المجمع
 async function broadcastOptimized(client, users, fn, label = "event") {
+  const ADMIN_ID = 351688450;
   const BATCH_SIZE = 50;
   let batchDelay = 2000;
   let success = 0;
@@ -131,6 +132,21 @@ async function broadcastOptimized(client, users, fn, label = "event") {
   console.log(`✅ Sent: ${success} | ❌ Failed: ${failed}`);
   console.log(`🕒 Duration: ${(endTime - startTime) / 1000}s`);
   console.log("═════════════════════════════════════════\n");
+  try {
+  const summary = `📢 <b>Broadcast Done</b>\n\n` +
+    `📌 النوع: ${label}\n` +
+    `✅ تم الإرسال: ${success}\n` +
+    `❌ فشل: ${failed}\n` +
+    `👥 المستخدمين: ${users.length}\n` +
+    `🕒 المدة: ${((endTime - startTime) / 1000).toFixed(1)} ثانية\n` +
+    `📅 الوقت: ${new Date().toLocaleString("ar-EG")}`;
+
+  await client.telegram.sendMessage(ADMIN_ID, summary, {
+    parse_mode: "HTML",
+  });
+} catch (err) {
+  console.log("⚠️ فشل إرسال إشعار الإدارة:", err.message);
+}
 }
 
 // ✅ الجدولة الأساسية
