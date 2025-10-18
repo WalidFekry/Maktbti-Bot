@@ -7,6 +7,11 @@ import Hijri from "./Hijri/index.js";
 import error_handling from "./error_handling.js";
 import axios from "axios";
 
+// ✅ دالة انتظار عامة
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 // ✅ فحص صلاحية الفيديو
 async function isValidVideo(url) {
   try {
@@ -30,31 +35,69 @@ async function getFileSize(url) {
   }
 }
 
-// ✅ دوال الإرسال مع Retry
-async function sendMediaWithRetry(client, chatId, media, method, caption) {
+// ✅ دوال الإرسال مع Retry محسّنة
+async function sendMediaWithRetry(
+  client,
+  chatId,
+  media,
+  method,
+  caption,
+  attempt = 1
+) {
   try {
     await client.telegram[method](chatId, media, {
       parse_mode: "HTML",
       caption,
     });
   } catch (error) {
-    if (error.response?.error_code === 429) {
-      const wait = (error.response.parameters?.retry_after || 5) * 1000;
-      console.warn(
-        `⚠️ Rate limit hit, waiting ${wait / 1000}s before retry...`
+    const desc = error.response?.description || "";
+    const code = error.response?.error_code;
+
+    // 🔁 التعامل مع Rate Limit
+    if (code === 429 || desc.includes("Too Many Requests")) {
+      const retryAfter = (error.response.parameters?.retry_after || 5) * 1000;
+      console.warn(`⚠️ Rate limit hit. Waiting ${retryAfter / 1000}s...`);
+      await sleep(retryAfter);
+      return sendMediaWithRetry(
+        client,
+        chatId,
+        media,
+        method,
+        caption,
+        attempt + 1
       );
-      await new Promise((res) => setTimeout(res, wait));
-      return sendMediaWithRetry(client, chatId, media, method, caption);
     }
 
-    if (error.response?.error_code === 504) {
-      console.log("⏳ Timeout.. retry in 5s");
-      await new Promise((res) => setTimeout(res, 5000));
-      return sendMediaWithRetry(client, chatId, media, method, caption);
+    // ⏳ إعادة المحاولة لو Timeout
+    if (code === 504 || desc.includes("Timeout")) {
+      console.log(`⏳ Timeout... retrying in 5s`);
+      await sleep(5000);
+      return sendMediaWithRetry(
+        client,
+        chatId,
+        media,
+        method,
+        caption,
+        attempt + 1
+      );
     }
 
+    // 🚫 تجاهل أخطاء المستخدم (blocked, deactivated...)
+    if (
+      desc.includes("bot was blocked") ||
+      desc.includes("user is deactivated") ||
+      desc.includes("chat not found")
+    ) {
+      console.log(`🚫 Skipped user ${chatId}: ${desc}`);
+      return;
+    }
+
+    // 📦 أي خطأ تاني نبعته لـ error_handling
     await error_handling(error, client);
   }
+
+  // 🕐 تأخير بسيط بعد الإرسال الناجح لتجنب rate limit
+  await sleep(300);
 }
 
 const sendPhotoWithRetry = (client, id, photo, caption) =>
@@ -66,40 +109,32 @@ const sendVideoWithRetry = (client, id, video, caption) =>
 const sendAudioWithRetry = (client, id, audio, caption) =>
   sendMediaWithRetry(client, id, audio, "sendAudio", caption);
 
-// 🕒 حساب المدة التقديرية
-function estimateBroadcastTime(usersCount, batchSize, batchDelay) {
-  const totalBatches = Math.ceil(usersCount / batchSize);
-  const estimatedSeconds = totalBatches * (batchDelay / 1000);
-  const minutes = Math.floor(estimatedSeconds / 60);
-  const seconds = Math.floor(estimatedSeconds % 60);
-  return { totalBatches, minutes, seconds, estimatedSeconds };
-}
-
-// ✅ نظام الإرسال المجمع
+// ✅ نظام الإرسال المجمع المحسّن
 async function broadcastOptimized(client, users, fn, label = "event") {
   const ADMIN_ID = 351688450;
-  const BATCH_SIZE = 50;
-  let batchDelay = 2000;
+  const BATCH_SIZE = 40; // دفعة صغيرة لتجنب الحظر
+  const BATCH_DELAY = 3000; // 3 ثواني بين كل دفعة
+  const USER_DELAY = 500; // 0.5 ثانية بين كل مستخدم
+
   let success = 0;
   let failed = 0;
 
   const startTime = new Date();
-  const { totalBatches, minutes, seconds } = estimateBroadcastTime(
-    users.length,
-    BATCH_SIZE,
-    batchDelay
-  );
-
   console.log("\n═════════════════════════════════════════");
   console.log(`🚀 Starting broadcast: ${label}`);
-  console.log(`📊 Users: ${users.length}`);
+  console.log(`👥 Users: ${users.length}`);
   console.log(`📦 Batch Size: ${BATCH_SIZE}`);
-  console.log(`⏳ Delay per Batch: ${batchDelay / 1000}s`);
-  console.log(`🕒 Estimated Duration: ${minutes} min ${seconds} sec`);
+  console.log(`⏳ User Delay: ${USER_DELAY}ms`);
+  console.log(`⏳ Batch Delay: ${BATCH_DELAY}ms`);
   console.log("═════════════════════════════════════════\n");
 
   for (let i = 0; i < users.length; i += BATCH_SIZE) {
     const batch = users.slice(i, i + BATCH_SIZE);
+    console.log(
+      `📦 Sending batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(
+        users.length / BATCH_SIZE
+      )}...`
+    );
 
     for (const u of batch) {
       try {
@@ -108,57 +143,45 @@ async function broadcastOptimized(client, users, fn, label = "event") {
       } catch (err) {
         failed++;
         await error_handling(err, client);
-        if (err.response?.error_code === 429) {
-          const retryAfter = (err.response.parameters?.retry_after || 2) * 1000;
-          console.warn(`⚠️ 429 hit, adding ${retryAfter}ms`);
-          batchDelay += retryAfter;
-          await new Promise((res) => setTimeout(res, retryAfter));
-        }
       }
-      await new Promise((res) => setTimeout(res, 50));
+      await sleep(USER_DELAY);
     }
 
-    console.log(
-      `✅ Batch ${
-        Math.floor(i / BATCH_SIZE) + 1
-      }/${totalBatches} done. Waiting ${batchDelay / 1000}s...`
-    );
-    await new Promise((res) => setTimeout(res, batchDelay));
+    console.log(`✅ Batch done, waiting ${BATCH_DELAY / 1000}s...`);
+    await sleep(BATCH_DELAY);
   }
 
   const endTime = new Date();
+  const totalSeconds = Math.floor((endTime - startTime) / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  let durationText = "";
+  if (hours > 0) durationText += `${hours} ساعة `;
+  if (minutes > 0) durationText += `${minutes} دقيقة `;
+  durationText += `${seconds} ثانية`;
+
+  const startText = new Date(startTime).toLocaleString("ar-EG");
+  const endText = new Date(endTime).toLocaleString("ar-EG");
+
+  const summary =
+    `📢 <b>Broadcast Done</b>\n\n` +
+    `📌 النوع: ${label}\n` +
+    `✅ تم الإرسال: ${success}\n` +
+    `❌ فشل: ${failed}\n` +
+    `👥 المستخدمين: ${users.length}\n` +
+    `🕒 المدة: ${durationText}\n` +
+    `🕓 البداية: ${startText}\n` +
+    `🕔 النهاية: ${endText}`;
+
   console.log("\n═════════════════════════════════════════");
   console.log(`🏁 Finished ${label}`);
   console.log(`✅ Sent: ${success} | ❌ Failed: ${failed}`);
-  console.log(`🕒 Duration: ${(endTime - startTime) / 1000}s`);
+  console.log(`🕒 Duration: ${durationText}`);
   console.log("═════════════════════════════════════════\n");
+
   try {
-    const endTime = new Date();
-
-    // 🕒 حساب المدة بصيغة "ساعات - دقائق - ثواني"
-    const totalSeconds = Math.floor((endTime - startTime) / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-
-    let durationText = "";
-    if (hours > 0) durationText += `${hours} ساعة `;
-    if (minutes > 0) durationText += `${minutes} دقيقة `;
-    durationText += `${seconds} ثانية`;
-
-    const startText = new Date(startTime).toLocaleString("ar-EG");
-    const endText = new Date(endTime).toLocaleString("ar-EG");
-
-    const summary =
-      `📢 <b>Broadcast Done</b>\n\n` +
-      `📌 النوع: ${label}\n` +
-      `✅ تم الإرسال: ${success}\n` +
-      `❌ فشل: ${failed}\n` +
-      `👥 المستخدمين: ${users.length}\n` +
-      `🕒 المدة: ${durationText}\n` +
-      `🕓 البداية: ${startText}\n` +
-      `🕔 النهاية: ${endText}`;
-
     await client.telegram.sendMessage(ADMIN_ID, summary, {
       parse_mode: "HTML",
     });
@@ -173,11 +196,11 @@ export default async function scheduling_messages(client) {
     const __dirname = path.resolve();
     const time = moment().locale("en-EN").format("LT");
 
-    const time_Hijri = ["12:02 AM"];
-    const time_video = ["4:00 AM", "12:02 PM"];
-    const time_photo = ["8:00 AM", "4:00 PM"];
-    const time_tafseer = ["8:00 PM"];
-    const time_quran = ["2:00 AM", "10:00 AM", "6:00 PM"];
+    const time_Hijri = ["12:05 AM"];
+    const time_video = ["5:00 AM"];
+    const time_photo = ["9:00 AM", "8:00 PM"];
+    const time_quran = ["12:00 PM"];
+    const time_tafseer = ["4:00 PM"];
 
     const GetAllUsers = await get_database_telegram("all");
     console.log(`⏰ Current Time: ${time} | Users: ${GetAllUsers.length}`);
@@ -222,7 +245,7 @@ export default async function scheduling_messages(client) {
               url: randomPhoto?.path,
             });
           },
-          `time_video - (${randomVideo?.path}) >> is invalid - (fallback to photo) >> (${randomPhoto?.path})`
+          `time_video - fallback photo (${randomPhoto?.path})`
         );
       } else {
         await broadcastOptimized(
@@ -319,28 +342,23 @@ export default async function scheduling_messages(client) {
           `🔁 محاولة ${attempts}: ${random?.name} - ${mp3quranRandom?.name} (${FileSizeText})`
         );
 
-        // ✅ لو الحجم أقل من 20 ميجا نكمل
         if (!isNaN(FileSizeNum) && FileSizeNum < 20) break;
       }
 
-      // ⛔ فشل في العثور على ملف مناسب
       if (isNaN(FileSizeNum) || FileSizeNum >= 20) {
         console.warn("⚠️ لم يتم العثور على تلاوة أقل من 20MB بعد عدة محاولات.");
         return;
       }
 
-      // ✅ تم العثور على تلاوة مناسبة
       console.log(
         `🎙️ Selected: ${random?.name} - ${mp3quranRandom?.name} (${FileSizeText})`
       );
 
-      // 🔹 تجهيز الرسالة
       let message = `▪️ <b>القارئ:</b> ${random?.name}\n`;
       message += `▪️ <b>الرواية:</b> ${random?.rewaya}\n`;
       message += `▪️ <b>السورة:</b> ${mp3quranRandom?.name} | ${mp3quranRandom?.translation}\n`;
       message += `▪️ <b>مكان النزول:</b> ${mp3quranRandom?.descent} | ${mp3quranRandom?.descent_english}`;
 
-      // 📢 إرسال نفس التلاوة لجميع المستخدمين
       await broadcastOptimized(
         client,
         GetAllUsers,
