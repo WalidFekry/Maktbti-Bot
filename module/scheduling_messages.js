@@ -112,9 +112,9 @@ const sendAudioWithRetry = (client, id, audio, caption) =>
 // ✅ نظام الإرسال المجمع المحسّن
 async function broadcastOptimized(client, users, fn, label = "event") {
   const ADMIN_ID = 351688450;
-  const BATCH_SIZE = 40; // دفعة صغيرة لتجنب الحظر
-  const BATCH_DELAY = 3000; // 3 ثواني بين كل دفعة
-  const USER_DELAY = 500; // 0.5 ثانية بين كل مستخدم
+  const BATCH_SIZE = 50; // دفعة صغيرة لتجنب الحظر
+  const BATCH_DELAY = 2000; // 2 ثواني بين كل دفعة
+  const USER_DELAY = 400; // 0.4 ثانية بين كل مستخدم
 
   let success = 0;
   let failed = 0;
