@@ -198,9 +198,9 @@ export default async function scheduling_messages(client) {
 
     const time_Hijri = ["12:05 AM"];
     const time_video = ["5:00 AM"];
-    const time_photo = ["9:00 AM", "8:00 PM"];
-    const time_quran = ["12:00 PM"];
-    const time_tafseer = ["4:00 PM"];
+    const time_photo = ["10:00 AM", "8:00 PM"];
+    const time_quran = ["12:00 PM"]; // معطل حالياً
+    const time_tafseer = ["3:00 PM"];
 
     const GetAllUsers = await get_database_telegram("all");
     console.log(`⏰ Current Time: ${time} | Users: ${GetAllUsers.length}`);
@@ -315,7 +315,7 @@ export default async function scheduling_messages(client) {
     }
 
     // 🎧 تلاوة القرآن (موحد)
-    else if (time_quran.includes(time)) {
+    else if (time_quran.includes(time) && false) {
       console.log("🎧 Preparing unified Quran recitation...");
       const mp3quran = fs.readJsonSync(
         path.join(__dirname, "./files/json/mp3quran.json")
