@@ -112,9 +112,9 @@ const sendAudioWithRetry = (client, id, audio, caption) =>
 // ✅ نظام الإرسال المجمع المحسّن
 async function broadcastOptimized(client, users, fn, label = "event") {
   const ADMIN_ID = 351688450;
-  const BATCH_SIZE = 60;
-  const BATCH_DELAY = 1500; 
-  const USER_DELAY = 350; 
+  const BATCH_SIZE = label === "time_quran" ? 20 : 60;
+  const BATCH_DELAY = label === "time_quran" ? 4000 : 1500;
+  const USER_DELAY = label === "time_quran" ? 800 : 350;
 
   let success = 0;
   let failed = 0;
@@ -190,6 +190,36 @@ async function broadcastOptimized(client, users, fn, label = "event") {
   }
 }
 
+// 🧠 نظام انتظار للإرسال (Queue)
+let isBroadcasting = false;
+let broadcastQueue = [];
+
+async function safeBroadcast(label, fn) {
+  if (isBroadcasting) {
+    console.log(`🕒 Waiting in queue: ${label}`);
+    broadcastQueue.push({ label, fn });
+    return;
+  }
+
+  isBroadcasting = true;
+  console.log(`🚀 Starting broadcast: ${label}`);
+
+  try {
+    await fn(); // تنفيذ المهمة
+  } catch (err) {
+    console.error(`❌ Broadcast failed: ${label}`, err);
+  }
+
+  isBroadcasting = false;
+
+  // 🔁 لو فيه مهام في الانتظار
+  if (broadcastQueue.length > 0) {
+    const next = broadcastQueue.shift();
+    console.log(`➡️ Next queued broadcast: ${next.label}`);
+    await safeBroadcast(next.label, next.fn);
+  }
+}
+
 // ✅ الجدولة الأساسية
 export default async function scheduling_messages(client) {
   setInterval(async () => {
@@ -197,9 +227,9 @@ export default async function scheduling_messages(client) {
     const time = moment().locale("en-EN").format("LT");
 
     const time_Hijri = ["12:05 AM"];
-    const time_video = ["5:00 AM"];
-    const time_photo = ["10:00 AM", "8:00 PM"];
-    const time_quran = ["12:00 PM"]; // معطل حالياً
+    const time_quran = ["3:00 AM"];
+    const time_video = ["8:00 AM"];
+    const time_photo = ["12:05 PM", "8:00 PM"];
     const time_tafseer = ["3:00 PM"];
 
     const GetAllUsers = await get_database_telegram("all");
@@ -211,15 +241,17 @@ export default async function scheduling_messages(client) {
       const photos = fs.readJsonSync(
         path.join(__dirname, "./files/json/photo.json")
       );
-      await broadcastOptimized(
-        client,
-        GetAllUsers,
-        async (user) => {
-          const random = photos[Math.floor(Math.random() * photos.length)];
-          await sendPhotoWithRetry(client, user.id, { url: random });
-        },
-        "time_photo"
-      );
+      await safeBroadcast("time_photo", async () => {
+        await broadcastOptimized(
+          client,
+          GetAllUsers,
+          async (user) => {
+            const random = photos[Math.floor(Math.random() * photos.length)];
+            await sendPhotoWithRetry(client, user.id, { url: random });
+          },
+          "time_photo"
+        );
+      });
     }
 
     // 🎥 الفيديو (موحد)
@@ -237,27 +269,31 @@ export default async function scheduling_messages(client) {
       if (!valid) {
         console.warn("⚠️ Invalid video, switching to photo backup.");
         const randomPhoto = photos[Math.floor(Math.random() * photos.length)];
-        await broadcastOptimized(
-          client,
-          GetAllUsers,
-          async (user) => {
-            await sendPhotoWithRetry(client, user.id, {
-              url: randomPhoto?.path,
-            });
-          },
-          `time_video - fallback photo (${randomPhoto?.path})`
-        );
+        await safeBroadcast("time_video", async () => {
+          await broadcastOptimized(
+            client,
+            GetAllUsers,
+            async (user) => {
+              await sendPhotoWithRetry(client, user.id, {
+                url: randomPhoto?.path,
+              });
+            },
+            `time_video`
+          );
+        });
       } else {
-        await broadcastOptimized(
-          client,
-          GetAllUsers,
-          async (user) => {
-            await sendVideoWithRetry(client, user.id, {
-              url: randomVideo?.path,
-            });
-          },
-          `time_video (${randomVideo?.path})`
-        );
+        await safeBroadcast("time_video", async () => {
+          await broadcastOptimized(
+            client,
+            GetAllUsers,
+            async (user) => {
+              await sendVideoWithRetry(client, user.id, {
+                url: randomVideo?.path,
+              });
+            },
+            `time_video`
+          );
+        });
       }
     }
 
@@ -270,20 +306,21 @@ export default async function scheduling_messages(client) {
 
       let message = `ـ ❁ …\n\n\nسورة <b>${TFSMouaser?.sura}</b> الآية: ${TFSMouaser?.ayahID}\n\n`;
       message += `<b>${TFSMouaser?.ayah}</b>\n\n${TFSMouaser?.tafseer}`;
-
-      await broadcastOptimized(
-        client,
-        GetAllUsers,
-        async (user) => {
-          await sendPhotoWithRetry(
-            client,
-            user.id,
-            { source: TFSMouaser?.buffer },
-            message
-          );
-        },
-        "time_tafseer"
-      );
+      await safeBroadcast("time_tafseer", async () => {
+        await broadcastOptimized(
+          client,
+          GetAllUsers,
+          async (user) => {
+            await sendPhotoWithRetry(
+              client,
+              user.id,
+              { source: TFSMouaser?.buffer },
+              message
+            );
+          },
+          "time_tafseer"
+        );
+      });
     }
 
     // 🗓️ التقويم الهجري (موحد)
@@ -299,23 +336,25 @@ export default async function scheduling_messages(client) {
       message += `التاريخ الميلادي: ${Hijri_?.Gregorian}\n\n`;
       message += `سورة ${Hijri_?.surah} | ${Hijri_?.title}\n\n${Hijri_?.body}`;
 
-      await broadcastOptimized(
-        client,
-        GetAllUsers,
-        async (user) => {
-          await sendPhotoWithRetry(
-            client,
-            user.id,
-            { source: Hijri_?.buffer },
-            message
-          );
-        },
-        "time_Hijri"
-      );
+      await safeBroadcast("time_Hijri", async () => {
+        await broadcastOptimized(
+          client,
+          GetAllUsers,
+          async (user) => {
+            await sendPhotoWithRetry(
+              client,
+              user.id,
+              { source: Hijri_?.buffer },
+              message
+            );
+          },
+          "time_Hijri"
+        );
+      });
     }
 
     // 🎧 تلاوة القرآن (موحد)
-    else if (time_quran.includes(time) && false) {
+    else if (time_quran.includes(time)) {
       console.log("🎧 Preparing unified Quran recitation...");
       const mp3quran = fs.readJsonSync(
         path.join(__dirname, "./files/json/mp3quran.json")
@@ -358,20 +397,21 @@ export default async function scheduling_messages(client) {
       message += `▪️ <b>الرواية:</b> ${random?.rewaya}\n`;
       message += `▪️ <b>السورة:</b> ${mp3quranRandom?.name} | ${mp3quranRandom?.translation}\n`;
       message += `▪️ <b>مكان النزول:</b> ${mp3quranRandom?.descent} | ${mp3quranRandom?.descent_english}`;
-
-      await broadcastOptimized(
-        client,
-        GetAllUsers,
-        async (user) => {
-          await sendAudioWithRetry(
-            client,
-            user.id,
-            { url: mp3quranRandom?.link },
-            message
-          );
-        },
-        `time_quran (${random?.name} - ${mp3quranRandom?.name})`
-      );
+      await safeBroadcast("time_quran", async () => {
+        await broadcastOptimized(
+          client,
+          GetAllUsers,
+          async (user) => {
+            await sendAudioWithRetry(
+              client,
+              user.id,
+              { url: mp3quranRandom?.link },
+              message
+            );
+          },
+          `time_quran`
+        );
+      });
     }
   }, 60000);
 }
