@@ -113,8 +113,8 @@ const sendAudioWithRetry = (client, id, audio, caption) =>
 async function broadcastOptimized(client, users, fn, label = "event") {
   const ADMIN_ID = 351688450;
   const BATCH_SIZE = label === "time_quran" ? 20 : 60;
-  const BATCH_DELAY = label === "time_quran" ? 4000 : 1500;
-  const USER_DELAY = label === "time_quran" ? 800 : 350;
+  const BATCH_DELAY = label === "time_quran" ? 4000 : 2000;
+  const USER_DELAY = label === "time_quran" ? 800 : 200;
 
   let success = 0;
   let failed = 0;
