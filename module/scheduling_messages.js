@@ -115,6 +115,7 @@ async function broadcastOptimized(client, users, fn, label = "event") {
   const BATCH_SIZE = label === "time_quran" ? 20 : 50;
   const BATCH_DELAY = label === "time_quran" ? 3000 : 1500;
   const USER_DELAY = label === "time_quran" ? 600 : 100;
+  const PARALLEL_LIMIT = label === "time_quran" ? 3 : 10; // 🆕 إرسال جزئي متوازي
 
   let success = 0;
   let failed = 0;
@@ -124,6 +125,7 @@ async function broadcastOptimized(client, users, fn, label = "event") {
   console.log(`🚀 Starting broadcast: ${label}`);
   console.log(`👥 Users: ${users.length}`);
   console.log(`📦 Batch Size: ${BATCH_SIZE}`);
+  console.log(`⚡ Parallel Limit: ${PARALLEL_LIMIT}`);
   console.log(`⏳ User Delay: ${USER_DELAY}ms`);
   console.log(`⏳ Batch Delay: ${BATCH_DELAY}ms`);
   console.log("═════════════════════════════════════════\n");
@@ -136,14 +138,23 @@ async function broadcastOptimized(client, users, fn, label = "event") {
       )}...`
     );
 
-    for (const u of batch) {
-      try {
-        await fn(u);
-        success++;
-      } catch (err) {
-        failed++;
-        await error_handling(err, client);
-      }
+    // 🧠 تقسيم الدفعة إلى مجموعات فرعية متوازية
+    for (let j = 0; j < batch.length; j += PARALLEL_LIMIT) {
+      const group = batch.slice(j, j + PARALLEL_LIMIT);
+
+      const results = await Promise.allSettled(
+        group.map(async (u) => {
+          try {
+            await fn(u);
+            success++;
+          } catch (err) {
+            failed++;
+            await error_handling(err, client);
+          }
+        })
+      );
+
+      // 🕐 انتظار بسيط بعد كل مجموعة صغيرة
       await sleep(USER_DELAY);
     }
 
@@ -189,6 +200,7 @@ async function broadcastOptimized(client, users, fn, label = "event") {
     console.log("⚠️ فشل إرسال إشعار الإدارة:", err.message);
   }
 }
+
 
 // 🧠 نظام انتظار للإرسال (Queue)
 let isBroadcasting = false;
