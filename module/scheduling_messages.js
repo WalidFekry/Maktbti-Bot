@@ -112,9 +112,9 @@ const sendAudioWithRetry = (client, id, audio, caption) =>
 // ✅ نظام الإرسال المجمع المحسّن
 async function broadcastOptimized(client, users, fn, label = "event") {
   const ADMIN_ID = 351688450;
-  const BATCH_SIZE = label === "time_quran" ? 20 : 60;
-  const BATCH_DELAY = label === "time_quran" ? 4000 : 2000;
-  const USER_DELAY = label === "time_quran" ? 800 : 200;
+  const BATCH_SIZE = label === "time_quran" ? 20 : 50;
+  const BATCH_DELAY = label === "time_quran" ? 3000 : 1500;
+  const USER_DELAY = label === "time_quran" ? 600 : 100;
 
   let success = 0;
   let failed = 0;
