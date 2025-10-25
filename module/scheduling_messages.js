@@ -378,8 +378,8 @@ export default async function scheduling_messages(client) {
         FileSizeText = "0 MB";
       let attempts = 0;
 
-      // 🔁 اختيار تلاوة مناسبة (أقل من 20MB فقط)
-      while (attempts < 15) {
+      // 🔁 اختيار تلاوة مناسبة (أقل من 10MB فقط)
+      while (attempts < 30) {
         attempts++;
         random = mp3quran[Math.floor(Math.random() * mp3quran.length)];
         mp3quranRandom =
@@ -393,11 +393,11 @@ export default async function scheduling_messages(client) {
           `🔁 محاولة ${attempts}: ${random?.name} - ${mp3quranRandom?.name} (${FileSizeText})`
         );
 
-        if (!isNaN(FileSizeNum) && FileSizeNum < 20) break;
+        if (!isNaN(FileSizeNum) && FileSizeNum <= 10) break;
       }
 
-      if (isNaN(FileSizeNum) || FileSizeNum >= 20) {
-        console.warn("⚠️ لم يتم العثور على تلاوة أقل من 20MB بعد عدة محاولات.");
+      if (isNaN(FileSizeNum) || FileSizeNum >= 10) {
+        console.warn("⚠️ لم يتم العثور على تلاوة أقل من 10MB بعد عدة محاولات.");
         return;
       }
 
