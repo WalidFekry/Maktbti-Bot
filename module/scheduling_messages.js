@@ -201,7 +201,6 @@ async function broadcastOptimized(client, users, fn, label = "event") {
   }
 }
 
-
 // 🧠 نظام انتظار للإرسال (Queue)
 let isBroadcasting = false;
 let broadcastQueue = [];
@@ -347,6 +346,9 @@ export default async function scheduling_messages(client) {
       message += `التاريخ الهجري: ${Hijri_?.Hijri}\n`;
       message += `التاريخ الميلادي: ${Hijri_?.Gregorian}\n\n`;
       message += `سورة ${Hijri_?.surah} | ${Hijri_?.title}\n\n${Hijri_?.body}`;
+
+      // 🔧 إصلاح وسوم <br> قبل الإرسال
+      message = message.replace(/<br\s*\/?>/gi, "\n");
 
       await safeBroadcast("time_Hijri", async () => {
         await broadcastOptimized(
