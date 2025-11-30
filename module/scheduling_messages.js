@@ -265,48 +265,88 @@ export default async function scheduling_messages(client) {
       });
     }
 
-    // 🎥 الفيديو (موحد)
+    // 🎥 الفيديو (موحد من API)
     else if (time_video.includes(time)) {
-      console.log("🎬 Preparing unified video...");
-      const videos = fs.readJsonSync(
-        path.join(__dirname, "./files/json/video.json")
-      );
+      console.log("🎬 Preparing unified video from API...");
+
       const photos = fs.readJsonSync(
         path.join(__dirname, "./files/json/photo.json")
       );
-      const randomVideo = videos[Math.floor(Math.random() * videos.length)];
-      const valid = await isValidVideo(randomVideo?.path);
 
-      if (!valid) {
-        console.warn("⚠️ Invalid video, switching to photo backup.");
+      try {
+        // 1) جلب فيديو عشوائي من الـ API
+        const apiResponse = await axios.get(
+          "https://post.walid-fekry.com/maktbti-plus/api/get_random_video.php",
+          { timeout: 10000 }
+        );
+
+        const data = apiResponse.data;
+
+        if (!data.success || !Array.isArray(data.data) || data.data.length === 0) {
+          throw new Error("No videos returned from API");
+        }
+
+        
+        const randomVideo = data.data[0];
+        
+        const videoUrl = randomVideo.full_path;
+        console.log("🎥 Selected video:", videoUrl);
+
+        // 2) التحقق من صلاحية الفيديو
+        const valid = await isValidVideo(videoUrl);
+
+        if (!valid) {
+          console.warn("⚠️ Invalid video from API, switching to photo backup.");
+          const randomPhoto = photos[Math.floor(Math.random() * photos.length)];
+
+          await safeBroadcast("time_video", async () => {
+            await broadcastOptimized(
+              client,
+              GetAllUsers,
+              async (user) => {
+                await sendPhotoWithRetry(client, user.id, {
+                  url: randomPhoto?.path || randomPhoto,
+                });
+              },
+              `time_video`
+            );
+          });
+        } else {
+          // 3) إرسال الفيديو الموحد لكل المستخدمين
+          await safeBroadcast("time_video", async () => {
+            await broadcastOptimized(
+              client,
+              GetAllUsers,
+              async (user) => {
+                await sendVideoWithRetry(client, user.id, {
+                  url: videoUrl,
+                });
+              },
+              `time_video`
+            );
+          });
+        }
+      } catch (err) {
+        console.error("❌ Error while getting video from API:", err.message);
+
+        // في حالة فشل الـ API بالكامل → نستخدم صورة كـ fallback
         const randomPhoto = photos[Math.floor(Math.random() * photos.length)];
-        await safeBroadcast("time_video", async () => {
+
+        await safeBroadcast("time_video_fallback", async () => {
           await broadcastOptimized(
             client,
             GetAllUsers,
             async (user) => {
               await sendPhotoWithRetry(client, user.id, {
-                url: randomPhoto?.path,
+                url: randomPhoto?.path || randomPhoto,
               });
             },
-            `time_video`
-          );
-        });
-      } else {
-        await safeBroadcast("time_video", async () => {
-          await broadcastOptimized(
-            client,
-            GetAllUsers,
-            async (user) => {
-              await sendVideoWithRetry(client, user.id, {
-                url: randomVideo?.path,
-              });
-            },
-            `time_video`
+            `time_video_fallback`
           );
         });
       }
     }
+
 
     // 📖 التفسير (موحد)
     else if (time_tafseer.includes(time)) {
