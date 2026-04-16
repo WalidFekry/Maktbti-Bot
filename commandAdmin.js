@@ -1,55 +1,46 @@
 // commandAdmin.js
 import error_handling from "./module/error_handling.js";
 import get_database_telegram from "./module/get_database_telegram.js";
-import fs from "fs-extra";
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// ✅ إرسال مع إعادة المحاولة (Retry)
-async function sendWithRetry(client, method, chatId, payload, attempt = 1, RETRY_LIMIT = 3) {
+// ✅ Retry
+async function sendWithRetry(client, method, chatId, payload, attempt = 1) {
   try {
     await client.telegram[method](chatId, ...payload);
   } catch (error) {
     const desc = error.response?.description || "";
     const code = error.response?.error_code;
 
-    if (attempt >= RETRY_LIMIT) {
-      console.warn(`🚫 Max retries reached for ${chatId}`);
+    if (attempt >= 3) {
+      console.warn(`🚫 Max retries for ${chatId}`);
       await error_handling(error, client);
-      return;
+      return false;
     }
 
-    if (code === 429 || desc.includes("Too Many Requests")) {
+    if (code === 429) {
       const wait = (error.response.parameters?.retry_after || 5) * 1000;
-      console.warn(`⚠️ Rate limit hit. Waiting ${wait / 1000}s...`);
+      console.warn(`⚠️ Rate limit.. wait ${wait / 1000}s`);
       await sleep(wait);
-      return sendWithRetry(client, method, chatId, payload, attempt + 1, RETRY_LIMIT);
+      return sendWithRetry(client, method, chatId, payload, attempt + 1);
     }
 
-    if (code === 504 || desc.includes("Timeout")) {
-      console.warn("⏳ Timeout. Retrying in 5s...");
-      await sleep(5000);
-      return sendWithRetry(client, method, chatId, payload, attempt + 1, RETRY_LIMIT);
-    }
-
-    if (
-      desc.includes("bot was blocked") ||
-      desc.includes("user is deactivated") ||
-      desc.includes("chat not found")
-    ) {
-      console.warn(`🚫 Skipped user ${chatId}: ${desc}`);
-      return;
+    if (desc.includes("blocked") || desc.includes("deactivated") || desc.includes("chat not found")) {
+      console.warn(`🚫 Skip ${chatId}: ${desc}`);
+      return false;
     }
 
     await error_handling(error, client);
+    return false;
   }
 
-  await sleep(200);
+  await sleep(100);
+  return true;
 }
 
-// ✅ نظام الإرسال المتطور
+// ✅ Broadcast (مع إحصائيات)
 async function broadcastOptimized(client, users, sendFn, label = "manual") {
   const ADMIN_ID = 351688450;
 
@@ -57,18 +48,16 @@ async function broadcastOptimized(client, users, sendFn, label = "manual") {
   const PARALLEL_LIMIT = label === "audio" ? 3 : 10;
   const BATCH_DELAY = label === "audio" ? 3000 : 1500;
   const USER_DELAY = label === "audio" ? 600 : 100;
-  const RETRY_LIMIT = 3;
 
   let sent = 0;
   let failed = 0;
 
   const startTime = new Date();
-  console.log("═════════════════════════════════════════");
-  console.log(`🚀 Starting broadcast: ${label}`);
+
+  console.log("══════════════════════════════");
+  console.log(`🚀 Broadcast: ${label}`);
   console.log(`👥 Users: ${users.length}`);
-  console.log(`📦 Batch Size: ${BATCH_SIZE}`);
-  console.log(`⚡ Parallel Limit: ${PARALLEL_LIMIT}`);
-  console.log("═════════════════════════════════════════");
+  console.log("══════════════════════════════");
 
   for (let i = 0; i < users.length; i += BATCH_SIZE) {
     const batch = users.slice(i, i + BATCH_SIZE);
@@ -76,15 +65,11 @@ async function broadcastOptimized(client, users, sendFn, label = "manual") {
     for (let j = 0; j < batch.length; j += PARALLEL_LIMIT) {
       const group = batch.slice(j, j + PARALLEL_LIMIT);
 
-      const results = await Promise.allSettled(
+      await Promise.allSettled(
         group.map(async (u) => {
-          try {
-            await sendFn(u);
-            sent++;
-          } catch (err) {
-            failed++;
-            await error_handling(err, client);
-          }
+          const ok = await sendFn(u);
+          if (ok) sent++;
+          else failed++;
         })
       );
 
@@ -92,140 +77,152 @@ async function broadcastOptimized(client, users, sendFn, label = "manual") {
     }
 
     console.log(
-      `📦 Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(users.length / BATCH_SIZE)} | ✅ Sent: ${sent} | ❌ Failed: ${failed}`
+      `📦 Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(users.length / BATCH_SIZE)} | ✅ ${sent} | ❌ ${failed}`
     );
 
     if (i + BATCH_SIZE < users.length) {
-      console.log(`⏳ Waiting ${BATCH_DELAY / 1000}s before next batch...`);
+      console.log(`⏳ Wait ${BATCH_DELAY / 1000}s`);
       await sleep(BATCH_DELAY);
     }
   }
 
   const endTime = new Date();
   const duration = ((endTime - startTime) / 1000).toFixed(2);
+
   const summary =
     `📢 <b>تم الانتهاء من الإرسال (${label})</b>\n\n` +
     `👥 المستخدمين: ${users.length}\n` +
-    `✅ تم الإرسال: ${sent}\n` +
+    `✅ تم: ${sent}\n` +
     `❌ فشل: ${failed}\n` +
     `⏱️ المدة: ${duration} ثانية\n` +
     `🕒 البداية: ${startTime.toLocaleString("ar-EG")}\n` +
     `🕔 النهاية: ${endTime.toLocaleString("ar-EG")}`;
 
-  console.log("═════════════════════════════════════════");
-  console.log(`🏁 Finished ${label}`);
-  console.log(`✅ Sent: ${sent} | ❌ Failed: ${failed}`);
-  console.log("═════════════════════════════════════════");
+  console.log("══════════════════════════════");
+  console.log(`🏁 Done ${label}`);
+  console.log(`✅ ${sent} | ❌ ${failed}`);
+  console.log("══════════════════════════════");
 
   try {
     await client.telegram.sendMessage(ADMIN_ID, summary, { parse_mode: "HTML" });
   } catch (err) {
-    console.log("⚠️ فشل إرسال التلخيص:", err.message);
+    console.log("⚠️ Failed to send summary");
   }
 }
 
-// 🧠 Queue (انتظار إرسال)
+// ✅ Queue
 let isBroadcasting = false;
-let broadcastQueue = [];
+let queue = [];
 
 async function safeBroadcast(label, fn) {
   if (isBroadcasting) {
-    console.log(`🕒 Waiting in queue: ${label}`);
-    broadcastQueue.push({ label, fn });
+    console.log(`🕒 Queued: ${label}`);
+    queue.push({ label, fn });
     return;
   }
 
   isBroadcasting = true;
-  console.log(`🚀 Starting broadcast: ${label}`);
+  console.log(`🚀 Start: ${label}`);
 
   try {
     await fn();
-  } catch (err) {
-    console.error(`❌ Broadcast failed: ${label}`, err);
+  } catch (e) {
+    console.error(`❌ Error in ${label}`, e);
   }
 
   isBroadcasting = false;
 
-  if (broadcastQueue.length > 0) {
-    const next = broadcastQueue.shift();
-    console.log(`➡️ Next queued broadcast: ${next.label}`);
+  if (queue.length > 0) {
+    const next = queue.shift();
+    console.log(`➡️ Next: ${next.label}`);
     await safeBroadcast(next.label, next.fn);
   }
 }
 
+// ✅ استخراج الميديا
+function extractMedia(ctx, type) {
+  const msg = ctx.message;
+  const reply = msg.reply_to_message;
+
+  if (type === "photo") {
+    const photos = reply?.photo || msg.photo;
+    return photos?.[photos.length - 1]?.file_id;
+  }
+
+  if (type === "video") return reply?.video?.file_id || msg.video?.file_id;
+  if (type === "audio") return reply?.audio?.file_id || msg.audio?.file_id;
+  if (type === "document") return reply?.document?.file_id || msg.document?.file_id;
+
+  return null;
+}
+
 export default async function commandAdmin(client, config) {
-  try {
-    const VALID_USER_TYPES = ["all", "private", "group", "supergroup", "channel"];
+  const VALID_USER_TYPES = ["all", "private", "group", "supergroup", "channel"];
 
-    const isBotOwner = (ctx) =>
-      ctx.message.from.username?.toLowerCase() === config.BOT_OWNER_USERNAME.toLowerCase();
+  const isBotOwner = (ctx) =>
+    ctx.message.from.username?.toLowerCase() === config.BOT_OWNER_USERNAME.toLowerCase();
 
-    async function getDatabaseUsers(userType) {
-      const users = await get_database_telegram(userType);
-      return users.filter(
-        (user) => user?.permissions?.canSendMessages || user?.type === "private"
-      );
-    }
+  async function getUsers(type) {
+    return await get_database_telegram(type);
+  }
 
-    // ✅ إرسال نص
-    client.command("sendtext", async (ctx) => {
-      if (!isBotOwner(ctx))
-        return ctx.reply("❌ Only bot owner can run this command.", { reply_to_message_id: ctx.message.message_id });
+  // ✅ TEXT
+  client.command("sendtext", async (ctx) => {
+    if (!isBotOwner(ctx)) return;
+
+    const args = ctx.message.text.split(" ");
+    const userType = args[1];
+    const message = args.slice(2).join(" ") || ctx.message.reply_to_message?.text;
+
+    if (!VALID_USER_TYPES.includes(userType) || !message)
+      return ctx.reply("❌ /sendtext all message");
+
+    const users = await getUsers(userType);
+
+    await safeBroadcast("text", async () =>
+      broadcastOptimized(client, users, (u) =>
+        sendWithRetry(client, "sendMessage", u.id, [message, { parse_mode: "HTML" }])
+        , "text")
+    );
+  });
+
+  // ✅ MEDIA
+  function registerMediaCommand(command, type) {
+    client.command(command, async (ctx) => {
+      if (!isBotOwner(ctx)) return;
 
       const args = ctx.message.text.split(" ");
       const userType = args[1];
-      const message = args.slice(2).join(" ") || ctx.message.reply_to_message?.text;
 
-      if (!VALID_USER_TYPES.includes(userType) || !message)
-        return ctx.reply("❌ Usage: /sendtext <userType> <message>", { reply_to_message_id: ctx.message.message_id });
+      if (!VALID_USER_TYPES.includes(userType))
+        return ctx.reply(`❌ /${command} all`);
 
-      const users = await getDatabaseUsers(userType);
-      await safeBroadcast("text", async () =>
-        broadcastOptimized(client, users, async (u) =>
-          sendWithRetry(client, "sendMessage", u.id, [message, { parse_mode: "HTML" }])
-        )
+      const file_id = extractMedia(ctx, type);
+
+      if (!file_id) return ctx.reply("⚠️ اعمل Reply على الميديا");
+
+      const caption =
+        ctx.message.caption ||
+        ctx.message.reply_to_message?.caption ||
+        "";
+
+      const users = await getUsers(userType);
+
+      await safeBroadcast(type, async () =>
+        broadcastOptimized(client, users, (u) =>
+          sendWithRetry(
+            client,
+            `send${type[0].toUpperCase() + type.slice(1)}`,
+            u.id,
+            [file_id, { caption, parse_mode: "HTML" }]
+          )
+          , type)
       );
     });
-
-    // ✅ إرسال ميديا عام (Photo, Video, Audio, Document)
-    function registerMediaCommand(command, type) {
-      client.command(command, async (ctx) => {
-        if (!isBotOwner(ctx))
-          return ctx.reply("❌ Only bot owner can run this command.", { reply_to_message_id: ctx.message.message_id });
-
-        const args = ctx.message.text.split(" ");
-        const userType = args[1];
-
-        if (!VALID_USER_TYPES.includes(userType))
-          return ctx.reply(`❌ Usage: /${command} <userType>`, { reply_to_message_id: ctx.message.message_id });
-
-        const media =
-          ctx.message.reply_to_message?.[type] ||
-          ctx.message[type] ||
-          ctx.message.reply_to_message?.photo?.pop() ||
-          ctx.message.photo?.pop();
-
-        if (!media) return ctx.reply("⚠️ No media found.", { reply_to_message_id: ctx.message.message_id });
-
-        const caption = ctx.message.caption || ctx.message.reply_to_message?.caption || "";
-        const users = await getDatabaseUsers(userType);
-
-        await safeBroadcast(type, async () =>
-          broadcastOptimized(client, users, async (u) =>
-            sendWithRetry(client, `send${type[0].toUpperCase() + type.slice(1)}`, u.id, [
-              media.file_id,
-              { parse_mode: "HTML", caption },
-            ])
-          , type)
-        );
-      });
-    }
-
-    registerMediaCommand("sendphoto", "photo");
-    registerMediaCommand("sendvideo", "video");
-    registerMediaCommand("sendaudio", "audio");
-    registerMediaCommand("senddocument", "document");
-  } catch (error) {
-    console.log(error);
   }
+
+  registerMediaCommand("sendphoto", "photo");
+  registerMediaCommand("sendvideo", "video");
+  registerMediaCommand("sendaudio", "audio");
+  registerMediaCommand("senddocument", "document");
 }
